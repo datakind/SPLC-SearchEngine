@@ -2,8 +2,8 @@
 
 tasks:
 
-    - formatting site DB
+    - formatting hatesites DB 
 
     - testing sites accessibiity
 
-    = extracting sites content
+    - extracting sites content
