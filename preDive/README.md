@@ -2,12 +2,13 @@
 
 tasks:
 
-    - formatting hatesites DB 
-        - flattenSPLCHateSitesDB.ipynb => Hate Domain Master List.xlsx -> hatesitesDB.csv
+    - formatting hatesites DB         
+        - flattenSPLCHateSitesDB.ipynb => Hate Domain Master List.xlsx -> hatesitesDB.csv
 
     - testing sites accessibiity
         - hatesite_request.py => hatesite_nonfailures.log hatesite_failures.log
         - assessAccess.py	
 
-    - extracting sites content => hatesite_wget.py
+    - extracting sites content 
+        - hatesite_wget.py
 
