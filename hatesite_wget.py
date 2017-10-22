@@ -1,3 +1,7 @@
+# written by FBB @fedhere 10/21/2017
+# reads SPLC list of "hate sites" and tries to access site w wget. 
+# saves content into a file in a directory by the name of the website
+
 import pandas as pd
 import os
 
