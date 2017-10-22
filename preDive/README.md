@@ -1,4 +1,4 @@
-** Code and prep material for the dive **
+# Code and prep material for the dive 
 
 tasks:
 
