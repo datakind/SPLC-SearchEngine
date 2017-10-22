@@ -1,5 +1,6 @@
-# written by FBB @fedhere
-# reads output of 
+# written by FBB @fedhere 10/21/2017
+# reads output of hatesite_requests.py and counts sites that failed as fraction of ideology
+
 import numpy as np
 import pandas as pd
 
