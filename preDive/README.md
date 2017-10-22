@@ -1,6 +1,5 @@
 # Code and prep material for the dive 
 
-tasks:
 
     - formatting hatesites DB         
         - flattenSPLCHateSitesDB.ipynb => Hate Domain Master List.xlsx -> hatesitesDB.csv
