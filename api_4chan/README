@@ -1,0 +1,17 @@
+Python API to retrieve 4chan board comments:
+
+Documentation:
+http://basc-py4chan.readthedocs.io/en/latest/library/post.html#basic-usage
+
+Github source for library:
+https://github.com/bibanon/BASC-py4chan
+
+Documentation of the full 4chan Read API (may include access to more information than implemented in the {ython library):
+https://github.com/4chan/4chan-API
+
+A similar API exists for 8chan:
+https://github.com/bibanon/py8chan
+
+http://py8chan.readthedocs.io/en/latest/index.html
+
+The pyhthon macro is likely goinf to work for 8chan as well when replacing basc_4chan library with 8cahn library
