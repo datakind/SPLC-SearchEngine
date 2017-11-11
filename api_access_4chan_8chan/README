@@ -25,7 +25,7 @@ Columns in output CSV:
 -----------
 Example usage: python extract_8chan_comments.py np comments_8chan_pol.csv
 
-pol   --> board name on 8chan
+np   --> board name on 8chan
 X.csv --> output file name
 
 Columns in output CSV:
