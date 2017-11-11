@@ -6,15 +6,26 @@
 import basc_py4chan
 
 # import more libraries
+import sys
 import pandas as pd
 
 def main():
-    # choose output CSV file
-    output_csv = "test_4chan.csv"
+
+    # chech command line input parameters
+    if len(sys.argv) != 3:
+        print("Usage: python %s [board] [output.csv]" % sys.argv[0])
+        print("Extracts all comments on board into csv file.")
+        print("Example: python %s pol comments_4chan_pol.csv"
+              % sys.argv[0])
+        #sys.exit(1)
+        return
 
     # open your favorite board
-    boardname = 'pol'
+    boardname = sys.argv[1]
     board = basc_py4chan.Board(boardname)
+
+    # choose output CSV file
+    output_csv = sys.argv[2]
 
     # create a dataframe to store infromation from 4chan board
     df = pd.DataFrame( columns = [
