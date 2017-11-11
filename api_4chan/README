@@ -22,6 +22,16 @@ Columns in output CSV:
 'Comment',	     --> The actual text of this post
 'File'               --> Original filename
 
+-----------
+Example usage: python extract_8chan_comments.py np comments_8chan_pol.csv
+
+pol   --> board name on 8chan
+X.csv --> output file name
+
+Columns in output CSV:
+
+same as 4chan, exctep 'File' column is not provided
+
 ------------
 Additional documentation:
 
@@ -36,9 +46,11 @@ https://github.com/bibanon/BASC-py4chan
 Documentation of the full 4chan Read API (may include access to more information than implemented in the {ython library):
 https://github.com/4chan/4chan-API
 
-A similar API exists for 8chan:
+--------------------
+
+Here's the documentation for 8chan:
 https://github.com/bibanon/py8chan
 
 http://py8chan.readthedocs.io/en/latest/index.html
 
-The pyhthon macro is likely goinf to work for 8chan as well when replacing basc_4chan library with 8cahn library
+The pyhthon macro is likely goinf to work for 8chan as well when replacing basc_4chan library with 8chan library
