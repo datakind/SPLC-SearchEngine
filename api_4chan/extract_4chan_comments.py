@@ -61,9 +61,10 @@ def main():
             'Postnumber',
             'Timestamp',
             'Datetime',
+            'Name',
             'Subject',
             'Comment',
-            'File',
+            'File'
             ] )
 
     # grab all thread ID's 
@@ -76,7 +77,7 @@ def main():
     pbar = ProgressBar()
 
     # loop over all threads
-    for thread_id in pbar( thread_ids[:5] ) :
+    for thread_id in pbar( thread_ids ) :
         thread = board.get_thread( thread_id )
 
         # topic information - loop oever all topics
@@ -108,6 +109,7 @@ def main():
                 post.post_number,
                 post.timestamp,
                 repr(post.datetime),
+                post.name,
                 subject_clean,
                 comment_clean,
                 post.file
