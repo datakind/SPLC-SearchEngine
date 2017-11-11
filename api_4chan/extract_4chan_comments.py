@@ -6,11 +6,6 @@
 # - basc-py4chan
 # - progressbar2
 
-# @TODO's:
-# * Extract URL information (base URL)
-# * Extract user information?
-# * flag main post- combine comments?
-
 # import libraries
 import sys
 import pandas as pd
