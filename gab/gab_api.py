@@ -1,8 +1,12 @@
 '''gab_api.py
-We can get posts from users and search but we cannot get following/followers easily.
-Maybe something like Selenium would do the trick with that
 
+Util wrapper to grab data from grab.ai
 Some not-so-useful info here: https://gab.ai/docs
+
+We can get posts from users and search but we cannot get 
+following/followers easily. Maybe something like Selenium would 
+to have it intereactively pull data from the html.
+
 
 Example: 
 # > s = start_session(login_payload)
@@ -42,10 +46,10 @@ def start_session(login_info):
 def get_user_feed(user_name, session):
     '''input user_name and session
     return dict of feed (possibly limited to latest 28 posts per gab: @docs)
-    - todo: output into a dataframe with relevant columns from json
     '''
     url = 'https://gab.ai/feed/{usr}'.format(usr=user_name)
     user = session.get(url)
+    # TODO: output into a dataframe with relevant columns from json
     return user.json()
 
 def search(query, session, sort='relevance'):
@@ -59,6 +63,7 @@ def search(query, session, sort='relevance'):
     results = session.get(url)
     return results.json()
 
+# TODO
 def get_referenced_users(feed):
     ''' input feed dictionary
     - Search for other mentions within that feed like @<username>
@@ -68,5 +73,6 @@ def get_referenced_users(feed):
     '''
     pass
 
+# TODO
 def feed_contains_taget_urls(feed, target_url_list):
     pass
