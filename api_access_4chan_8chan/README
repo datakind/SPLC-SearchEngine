@@ -46,6 +46,9 @@ https://github.com/bibanon/BASC-py4chan
 Documentation of the full 4chan Read API (may include access to more information than implemented in the {ython library):
 https://github.com/4chan/4chan-API
 
+Installation:
+- 'pip install basc_py4chan'
+
 --------------------
 
 Here's the documentation for 8chan:
@@ -53,4 +56,11 @@ https://github.com/bibanon/py8chan
 
 http://py8chan.readthedocs.io/en/latest/index.html
 
-The pyhthon macro is likely goinf to work for 8chan as well when replacing basc_4chan library with 8chan library
+Installation:
+- did not find the package with 'pip install py8chan'
+- Workaround:
+  1) Download code from github
+  2) cd py8chan
+  3) pip install .
+
+-------------
