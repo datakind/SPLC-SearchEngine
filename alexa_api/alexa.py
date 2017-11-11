@@ -20,7 +20,7 @@ import pprint
 
 class Alexa():
 
-    ACCESS_ID = "AKIAJ7RW7AUZHPYNGWAA"
+    ACCESS_ID = "AKIAIIKNPTNCGEICYBIQ"
     URL_INFO_RESPONSE_PARAMETERS = ['RelatedLinks', 'Categories', 'Rank', 'RankByCountry', 'UsageStats', 'AdultContent',
                                     'Speed', 'Language', 'OwnedDomains', 'LinksInCount', 'SiteData']
 
@@ -32,4 +32,3 @@ class Alexa():
         return self.api.url_info("vdare.com", *Alexa.URL_INFO_RESPONSE_PARAMETERS)
 
 a = Alexa()
-pprint.pprint(a.url_info())
