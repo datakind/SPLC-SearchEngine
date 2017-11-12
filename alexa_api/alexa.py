@@ -3,16 +3,9 @@ __email__ = "ruby.w.chu@gmail.com, vcolano@gmail.com"
 
 import awis
 import getpass
-import lxml
-from json import loads, dumps
-import pprint
-import json
-import pickle
 import pandas as pd
-import numpy as np
 import os
 import xmltodict
-from collections import defaultdict
 
 class Alexa():
     """
