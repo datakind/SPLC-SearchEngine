@@ -6,6 +6,7 @@ import getpass
 import lxml
 from json import loads, dumps
 import pprint
+import json
 import pickle
 import pandas as pd
 import numpy as np
@@ -15,7 +16,7 @@ from collections import defaultdict
 
 class Alexa():
     """
-    A wrapper for theAmazon Alexa Web Information Service API with functionality to expand a dataset of website urls.
+    A wrapper for the Amazon Alexa Web Information Service API with functionality to expand a dataset of website urls.
 
     Information about the API can be found here:
     http://docs.aws.amazon.com/AlexaWebInfoService/latest/index.html?IntroductionArticle.html
@@ -54,31 +55,6 @@ class Alexa():
         self.api = awis.AwisApi(Alexa.ACCESS_ID, self.secret)
         self.urls_df = pd.read_csv(Alexa.URLS_DATASET_PATH)
 
-    def create_url_info_dataset(self):
-        """
-        Iterates over all of the website urls in URL_DATASET_PATH and generates supplementary features on the websites
-        using the URL_INFO AWIS api.
-
-        :return: a pandas DataFrame with the original features and supplementary features
-        """
-        all_cols = list(self.urls_df.columns.get_values()) + Alexa.URL_INFO_FEATURE_NAMES
-        features_dict = dict((col, []) for col in all_cols)
-        for _, row in self.urls_df.iterrows():
-            features = self.url_info(row['Website'])
-            if not features:
-                continue
-            for col_name in Alexa.URL_INFO_FEATURE_NAMES:
-                if col_name in Alexa.URL_INFO_FEATURE_NAMES:
-                    features_dict[col_name].append(features.get(col_name))
-                else:
-                    features_dict[col_name].append(row[col_name])
-
-        with open('/home/vito/projects/SPLC-SearchEngine/alexa_api/features_dict_serialized.txt', 'wb') as f:
-            ser = pickle.dump(features_dict, f)
-
-        expanded_df = pd.DataFrame.from_dict(features_dict)
-        return expanded_df
-
     def url_info(self, url):
         """
         Uses the AWIS url_info endpoint to obtain a set of features on a URL. Note that the endpoint extacts and
@@ -89,14 +65,14 @@ class Alexa():
         http://docs.aws.amazon.com/AlexaWebInfoService/latest/index.html?IntroductionArticle.html
 
         :param url: the url to request features on
-        :return: a dictionary of useful features pulled from the response
+        :return: a dictionary of useful features pulled from the response or None if an unsuccessful API response
         """
         xml_response = self.api.url_info(url, *Alexa.URL_INFO_RESPONSE_PARAMETERS, as_xml=False)
         res_dict = loads(dumps(xmltodict.parse(xml_response, process_namespaces=True, namespaces=Alexa.URL_INFO_NAMESPACES)))
         flat_dict = {}
         if not res_dict['UrlInfoResponse']['Response']['ResponseStatus']['StatusCode'] == 'Success':
             print("Error, unsuccessful response from api for the following url:\t" + url)
-            return None
+            return {}
         elif 'Alexa' in res_dict['UrlInfoResponse']['Response']['UrlInfoResult']:
             if 'ContentData' in res_dict['UrlInfoResponse']['Response']['UrlInfoResult']['Alexa']:
                 content = res_dict['UrlInfoResponse']['Response']['UrlInfoResult']['Alexa']['ContentData']
@@ -131,5 +107,31 @@ class Alexa():
                     flat_dict['ContributingSubdomains'] = subdomains.strip(', ')
         return flat_dict
 
+    def create_url_info_dataset(self):
+        """
+        Iterates over all of the website urls in URL_DATASET_PATH and generates supplementary features on the websites
+        using the URL_INFO AWIS api.
+
+        :return: a pandas DataFrame with the original features and supplementary features
+        """
+
+        # a list of the original dataset's columns with the new feature columns to be added
+        all_cols = list(self.urls_df.columns.get_values()) + Alexa.URL_INFO_FEATURE_NAMES
+
+        # iterate over rows in original dataset, filling a dict to create a new dataset from
+        features_dict = dict((col, []) for col in all_cols)
+        for _, row in self.urls_df.iterrows():
+            features = self.url_info(row['Website'])
+            for col_name in all_cols:
+                if col_name in Alexa.URL_INFO_FEATURE_NAMES:
+                    features_dict[col_name].append(features.get(col_name))
+                else:
+                    features_dict[col_name].append(row[col_name])
+
+        expanded_df = pd.DataFrame.from_dict(features_dict) # convert dict to df
+        expanded_df = expanded_df[all_cols] # reorder columns
+        return expanded_df
+
 a = Alexa()
 df = a.create_url_info_dataset()
+df.to_csv('hateSitesExpandedWithUrlInfo.csv', encoding='utf-8', index=False)
