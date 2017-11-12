@@ -1,6 +1,18 @@
+"""
+usage: `compute_page_rank.py url_list_path path_to_data`
+
+`path_to_data` needs to be a path to a directory that contains the
+scraped results of from wget.
+`url_list_path`: a text file of the urls we're looking at.
+
+requires python3
+"""
+
+
 from urllib.parse import urlparse
 import sys
 from os import walk
+from os.path import expanduser
 import glob
 
 
@@ -9,11 +21,13 @@ import pandas as pd
 from bs4 import BeautifulSoup
 
 
-data_path = "/home/proctortc/Documents/OtherData/SPLCDataDive/"
+def pagerank_to_csv(data_path, raw_url_path):
+    page_rank = calculate_pagerank(data_path, raw_url_path)
+    page_rank.to_csv('page_rank.csv')
 
 
-def calculate_pagerank(data_path):
-    url_df = url_dataframe(data_path)
+def calculate_pagerank(data_path, raw_url_path):
+    url_df = url_dataframe(raw_url_path)
     url_df = add_hosts(url_df, 0)
     page_graph = initialize_graph(url_df)
     edge_pairs = generate_edge_pairs(data_path, url_df)
@@ -27,15 +41,12 @@ def add_pagerank(urldf, edge_tups, page_graph):
     return urldf.join(ser)
 
 
-def url_dataframe(data_path):
-    return pd.read_csv(data_path + "RawUrls.txt", header=None)
+def url_dataframe(raw_url_path):
+    return pd.read_csv(raw_url_path, header=None)
 
 
 def get_datapath_len(data_path):
-    return len(data_path.split("/"))
-
-
-# In[38]:
+    return len(data_path.strip("/").split("/"))
 
 
 def get_all_netlocs(soup):
@@ -68,7 +79,7 @@ def get_origin_site(base, none, file_list, datapath_len=7):
 
 
 def generate_edge_pairs(data_path, url_df):
-    all_urls = glob.glob(data_path + "URLScrape/*")
+    all_urls = glob.glob(data_path)
     datapath_len = get_datapath_len(data_path)
     l = []
     for i in all_urls:
@@ -116,15 +127,11 @@ def flatten_list(li):
     return [item for sublist in li for item in sublist]
 
 
-def pagerank_to_csv(data_path):
-    page_rank = calculate_pagerank(data_path)
-    page_rank.to_csv('page_rank.csv')
-
-
 def _main():
-    data_path = sys.argv[1]
-    pagerank_to_csv(data_path)
+    data_path = expanduser(sys.argv[2])
+    raw_url_path = expanduser(sys.argv[1])
+    pagerank_to_csv(data_path, raw_url_path)
 
 
-if __name__ is "__main__":
+if __name__ == "__main__":
     _main()

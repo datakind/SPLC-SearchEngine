@@ -1,0 +1,5 @@
+Used “RJSONIO” library in R and scrapped the comments for one URL for Reddit
+Idea/Future: 
+1) Get the list of URL's from reddit with some particular keyword(the master keyword list probably) using "RedditExtractoR" library in R
+2) Run all the above URL's in a loop using the existing above code(with some modifications may be) to scrap all the comments
+3) Analyze the Comments(Word Cloud/Semantic Analysis/..) to get more keywords or find some pattern with the existing ones. 
