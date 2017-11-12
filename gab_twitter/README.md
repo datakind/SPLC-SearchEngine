@@ -12,13 +12,13 @@ With this data, we can apply topic modeling analyses and we can featurize all of
 * utils.py - helper functions to build gab post data frames
 * andrewwanglin.csv - sample output of @andrewwaglin's latest posts
 
-#Next Steps
+# Potential Next Steps
 The main methodology would be as follows:
 * identify users of high interest
 * find overlap of users on twitter and gab.ai and pull posts/tweets for analysis and modeling
 * set up something to automatically track and store the gab posts of these high interest users
 
-#More details
+# More details
 Get a list of twitter users and see if they have a gab.ai presence:
 * check their bios to search for gab profiles
 * is there someone one on gab with a similar name/username/etc on twitter?
