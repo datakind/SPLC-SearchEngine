@@ -1,20 +1,4 @@
-"""
-Contains functionality to use the Amazon Alexa Web Information Service API. This API provides several endpoints
-to get information on a URL such as site visit volume, site owner(s), external sites linking to the page and more.
-
-Information about the API can be found here:
-http://docs.aws.amazon.com/AlexaWebInfoService/latest/index.html?IntroductionArticle.html
-
-Information about obtaining an access_id/secret pair for AWIS can be found here:
-https://aws.amazon.com/awis/faqs/#general_5
-
-Information on the awis Python library wrapping the API can be found here:
-https://pypi.python.org/pypi/python-awis/1.2.1
-
-
-"""
-
-__author__ = "Ruby Chu - github: rubesc, Vito Colano - github: vcolano"
+__author__ = "Ruby Chu - github: rubesc, Vito A. Colano - github: vcolano"
 __email__ = "ruby.w.chu@gmail.com, vcolano@gmail.com"
 
 import awis
@@ -30,7 +14,20 @@ import xmltodict
 from collections import defaultdict
 
 class Alexa():
+    """
+    A wrapper for theAmazon Alexa Web Information Service API with functionality to expand a dataset of website urls.
 
+    Information about the API can be found here:
+    http://docs.aws.amazon.com/AlexaWebInfoService/latest/index.html?IntroductionArticle.html
+
+    Information about obtaining an access_id/secret pair for AWIS can be found here:
+    https://aws.amazon.com/awis/faqs/#general_5
+
+    Information on the awis Python library wrapping the API can be found here:
+    https://pypi.python.org/pypi/python-awis/1.2.1
+    """
+
+    # the AWS access id, a root user's access_id/secret pair must be used, an IAM user's pair cannot be used
     ACCESS_ID = "AKIAIIKNPTNCGEICYBIQ"
 
     # the features to request from the url_info endpoint
@@ -41,19 +38,29 @@ class Alexa():
     URL_INFO_FEATURE_NAMES = ['ExternalLinksToSite', 'OwnersOtherDomains', 'SiteDescription', 'OnlineSince',
                               'SiteTitle', 'ThreeMonthAvgUSRank', 'PageViewsPerMillion', 'PageViewsPerUser',
                               'ContributingSubdomains']
+
+    # path to the source dataset of websites
     URLS_DATASET_PATH = '..' + os.sep + 'preDive' + os.sep + 'hatesitesDB.csv'
-    NAMESPACES = {
+
+    # namespaces to filter out when parsing the xml response payload from the url info AWIS endpoint
+    URL_INFO_NAMESPACES = {
         'http://alexa.amazonaws.com/doc/2005-10-05/': None,
         'http://awis.amazonaws.com/doc/2005-07-11': None
     }
 
     def __init__(self):
+        """Initializes the AWIS API connection and loads the source dataset of websites"""
         self.secret = getpass.getpass(prompt='AWS Secret Key:')
         self.api = awis.AwisApi(Alexa.ACCESS_ID, self.secret)
         self.urls_df = pd.read_csv(Alexa.URLS_DATASET_PATH)
 
     def create_url_info_dataset(self):
+        """
+        Iterates over all of the website urls in URL_DATASET_PATH and generates supplementary features on the websites
+        using the URL_INFO AWIS api.
 
+        :return: a pandas DataFrame with the original features and supplementary features
+        """
         all_cols = list(self.urls_df.columns.get_values()) + Alexa.URL_INFO_FEATURE_NAMES
         features_dict = dict((col, []) for col in all_cols)
         for _, row in self.urls_df.iterrows():
@@ -65,6 +72,9 @@ class Alexa():
                     features_dict[col_name].append(features.get(col_name))
                 else:
                     features_dict[col_name].append(row[col_name])
+
+        with open('/home/vito/projects/SPLC-SearchEngine/alexa_api/features_dict_serialized.txt', 'wb') as f:
+            ser = pickle.dump(features_dict, f)
 
         expanded_df = pd.DataFrame.from_dict(features_dict)
         return expanded_df
@@ -82,7 +92,7 @@ class Alexa():
         :return: a dictionary of useful features pulled from the response
         """
         xml_response = self.api.url_info(url, *Alexa.URL_INFO_RESPONSE_PARAMETERS, as_xml=False)
-        res_dict = loads(dumps(xmltodict.parse(xml_response, process_namespaces=True, namespaces=Alexa.NAMESPACES)))
+        res_dict = loads(dumps(xmltodict.parse(xml_response, process_namespaces=True, namespaces=Alexa.URL_INFO_NAMESPACES)))
         flat_dict = {}
         if not res_dict['UrlInfoResponse']['Response']['ResponseStatus']['StatusCode'] == 'Success':
             print("Error, unsuccessful response from api for the following url:\t" + url)
