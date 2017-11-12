@@ -53,20 +53,20 @@ class Alexa():
         self.urls_df = pd.read_csv(Alexa.URLS_DATASET_PATH)
 
     def create_url_info_dataset(self):
-        expanded_df = self.urls_df.copy()
-        #expanded_df.index = expanded_df.Website.copy()
-        for col in Alexa.URL_INFO_FEATURE_NAMES:
-            expanded_df[col] = np.NAN
 
-        count = 0
-        for site in self.urls_df['Website']:
-            features = self.url_info(site)
+        all_cols = list(self.urls_df.columns.get_values()) + Alexa.URL_INFO_FEATURE_NAMES
+        features_dict = dict((col, []) for col in all_cols)
+        for _, row in self.urls_df.iterrows():
+            features = self.url_info(row['Website'])
             if not features:
                 continue
             for col_name in Alexa.URL_INFO_FEATURE_NAMES:
-                expanded_df.iloc[count, expanded_df.columns.get_loc(col_name)] = features.get(col_name)
-            count += 1
+                if col_name in Alexa.URL_INFO_FEATURE_NAMES:
+                    features_dict[col_name].append(features.get(col_name))
+                else:
+                    features_dict[col_name].append(row[col_name])
 
+        expanded_df = pd.DataFrame.from_dict(features_dict)
         return expanded_df
 
     def url_info(self, url):
@@ -99,18 +99,22 @@ class Alexa():
             if 'TrafficData' in res_dict['UrlInfoResponse']['Response']['UrlInfoResult']['Alexa']:
                 traffic = res_dict['UrlInfoResponse']['Response']['UrlInfoResult']['Alexa']['TrafficData']
                 flat_dict['ThreeMonthAvgUSRank'] = traffic.get('Rank')
-                if 'UsageStatistics' in traffic and traffic['UsageStatistics'] \
-                    and 'UsageStatistic' in traffic['UsageStatistics'] and\
-                    traffic['UsageStatistics']['UsageStatistic']:
-                    if traffic['UsageStatistics']['UsageStatistic'][0] and \
-                                    'PageViews' in traffic['UsageStatistics']['UsageStatistic'][0]:
-                        pageviews = traffic['UsageStatistics']['UsageStatistic'][0]['PageViews']
-                        if 'PerMillion' in pageviews:
-                            flat_dict['PageViewsPerMillion'] = pageviews['PerMillion'].get('Value')
-                        if 'PerUser' in pageviews:
-                            flat_dict['PageViewsPerUser'] = pageviews['PerUser'].get('Value')
-                if 'ContributingSubdomains' in traffic and traffic['ContributingSubdomains'] and \
-                        traffic['ContributingSubdomains']['ContributingSubdomain']:
+                if traffic.get('UsageStatistics') and traffic['UsageStatistics'].get('UsageStatistic'):
+                    try:
+                        if isinstance(traffic['UsageStatistics']['UsageStatistic'], dict):
+                            usage_stat = traffic['UsageStatistics']['UsageStatistic']
+                        else:
+                            usage_stat = traffic['UsageStatistics']['UsageStatistic'][0]
+                        if 'PageViews' in usage_stat:
+                            pageviews = usage_stat['PageViews']
+                            if 'PerMillion' in pageviews:
+                                flat_dict['PageViewsPerMillion'] = pageviews['PerMillion'].get('Value')
+                            if 'PerUser' in pageviews:
+                                flat_dict['PageViewsPerUser'] = pageviews['PerUser'].get('Value')
+                    except KeyError as e:
+                        pass
+                if traffic.get('ContributingSubdomains') and \
+                        traffic['ContributingSubdomains'].get('ContributingSubdomain'):
                     subdomains = ''
                     for subdomain in traffic['ContributingSubdomains']['ContributingSubdomain']:
                         if isinstance(subdomain, dict):
