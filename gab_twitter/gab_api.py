@@ -12,6 +12,8 @@ Example:
 # > s = start_session(login_payload)
 # > user = get_user_feed(USER, s)
 # > srch = search('Coulter',s)
+
+TODO: Add error handling + retires decoratos
 '''
 
 import json
@@ -20,17 +22,14 @@ import re
 import requests as req
 import sys
 
+from credentials import login_payload
+import utils
+
 LOGIN_URL = 'https://gab.ai/auth/login'
 USER = 'a'
 HEADERS = {}
 HIDDEN_TOKEN_RE = '<input type="hidden" name="_token" value="(.*)">'
 
-# fake name: Brandon E. Pike
-login_payload = {
-    'username': 'regseorg@gjnwrg.com',  # or brandon_e_pike
-    'password': 'fakeaccount',
-    'remember': True
-}
 
 def start_session(login_info):
     s = req.Session()
@@ -43,14 +42,24 @@ def start_session(login_info):
     p = s.post(LOGIN_URL, data=login_info)
     return s
 
-def get_user_feed(user_name, session):
+def get_user_feed(user_name, session, raw_posts=False, write_path=None):
     '''input user_name and session
-    return dict of feed (possibly limited to latest 28 posts per gab: @docs)
+    
+    - return pandas df of feed (possibly limited to 28 posts per gab: @docs)
+    - Option to return raw dictiory response with raw_posts flag
+    - Dataframe does not include pinned post, raw data does
+    - can output to a csv if write_path is specified
     '''
     url = 'https://gab.ai/feed/{usr}'.format(usr=user_name)
-    user = session.get(url)
-    # TODO: output into a dataframe with relevant columns from json
-    return user.json()
+    response = session.get(url)
+    user_posts = response.json()
+    if raw_posts:
+        return user_posts
+    else:
+        data = utils.make_dataframe_from_posts(user_posts['data'])
+        if write_path:
+            data.to_csv(write_path, index=False, encoding='utf-8')
+        return data
 
 def search(query, session, sort='relevance'):
     '''Available sort keys: date, relevance, score
@@ -59,7 +68,6 @@ def search(query, session, sort='relevance'):
     if sort not in ('date', 'relevance', 'score'):
         sys.exit('Sort key must be one of: date, relevance, score')
     url = 'https://gab.ai/api/search?sort={srt}&q={qry}'.format(srt=sort, qry=query)
-    print url
     results = session.get(url)
     return results.json()
 
