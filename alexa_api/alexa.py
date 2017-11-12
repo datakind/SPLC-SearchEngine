@@ -5,6 +5,7 @@ import awis
 import getpass
 import pandas as pd
 import os
+from json import loads, dumps
 from lxml import etree
 import xmltodict
 
@@ -68,7 +69,7 @@ class Alexa():
         :return: a dictionary of useful features pulled from the response or None if an unsuccessful API response
         """
         xml_response = self.api.url_info(url, *Alexa.URL_INFO_RESPONSE_PARAMETERS, as_xml=False)
-        res_dict = xmltodict.parse(xml_response, process_namespaces=True, namespaces=Alexa.NAMESPACES)
+        res_dict = loads(dumps(xmltodict.parse(xml_response, process_namespaces=True, namespaces=Alexa.NAMESPACES)))
         flat_dict = {}
         if not res_dict['UrlInfoResponse']['Response']['ResponseStatus']['StatusCode'] == 'Success':
             print("Error, unsuccessful response from api for the following url:\t" + url)
@@ -107,13 +108,16 @@ class Alexa():
                             flat_dict['PageViewsPerUser'] = pageviews['PerUser'].get('Value')
                 if traffic.get('ContributingSubdomains') and \
                         traffic['ContributingSubdomains'].get('ContributingSubdomain'):
-                    subdomains = ''
-                    for subdomain in traffic['ContributingSubdomains']['ContributingSubdomain']:
-                        if isinstance(subdomain, dict):
-                            subdomains += subdomain.get('DataUrl') + ', '
-                        else:
-                            subdomains = subdomain
-                    flat_dict['ContributingSubdomains'] = subdomains.strip(', ')
+                    if isinstance(traffic['ContributingSubdomains']['ContributingSubdomain'], dict):
+                        flat_dict['ContributingSubdomains'] = traffic['ContributingSubdomains']['ContributingSubdomain']['DataUrl']
+                    else: # it's a list
+                        subdomains = ''
+                        for subdomain in traffic['ContributingSubdomains']['ContributingSubdomain']:
+                            if isinstance(subdomain, dict):
+                                subdomains += subdomain.get('DataUrl') + ', '
+                            else:
+                                subdomains = subdomain
+                        flat_dict['ContributingSubdomains'] = subdomains.strip(', ')
         return flat_dict
 
     def sites_linking_in(self, url):
@@ -142,7 +146,6 @@ class Alexa():
                     return {'HighestRankSitesLinkingTo': site_str.strip(', ')}
         return {}
 
-
     def expanded_dataset(self):
         """
         Iterates over all of the website urls in URL_DATASET_PATH and generates supplementary features on the websites
@@ -169,6 +172,8 @@ class Alexa():
         expanded_df = expanded_df[all_cols] # reorder columns
         return expanded_df
 
+
+# script to generate the dataset
 a = Alexa()
 df = a.expanded_dataset()
-df.to_csv('hateSitesExpandedWithUrlInfo.csv', encoding='utf-8', index=False)
+df.to_csv('hateSitesExpanded.csv', encoding='utf-8', index=False)
