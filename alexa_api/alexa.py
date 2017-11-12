@@ -110,19 +110,16 @@ class Alexa():
                 traffic = res_dict['UrlInfoResponse']['Response']['UrlInfoResult']['Alexa']['TrafficData']
                 flat_dict['ThreeMonthAvgUSRank'] = traffic.get('Rank')
                 if traffic.get('UsageStatistics') and traffic['UsageStatistics'].get('UsageStatistic'):
-                    try:
-                        if isinstance(traffic['UsageStatistics']['UsageStatistic'], dict):
-                            usage_stat = traffic['UsageStatistics']['UsageStatistic']
-                        else:
-                            usage_stat = traffic['UsageStatistics']['UsageStatistic'][0]
-                        if 'PageViews' in usage_stat:
-                            pageviews = usage_stat['PageViews']
-                            if 'PerMillion' in pageviews:
-                                flat_dict['PageViewsPerMillion'] = pageviews['PerMillion'].get('Value')
-                            if 'PerUser' in pageviews:
-                                flat_dict['PageViewsPerUser'] = pageviews['PerUser'].get('Value')
-                    except KeyError as e:
-                        pass
+                    if isinstance(traffic['UsageStatistics']['UsageStatistic'], dict):
+                        usage_stat = traffic['UsageStatistics']['UsageStatistic']
+                    else:
+                        usage_stat = traffic['UsageStatistics']['UsageStatistic'][0]
+                    if 'PageViews' in usage_stat:
+                        pageviews = usage_stat['PageViews']
+                        if 'PerMillion' in pageviews:
+                            flat_dict['PageViewsPerMillion'] = pageviews['PerMillion'].get('Value')
+                        if 'PerUser' in pageviews:
+                            flat_dict['PageViewsPerUser'] = pageviews['PerUser'].get('Value')
                 if traffic.get('ContributingSubdomains') and \
                         traffic['ContributingSubdomains'].get('ContributingSubdomain'):
                     subdomains = ''
