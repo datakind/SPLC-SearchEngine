@@ -1,10 +1,8 @@
-name: collecting_contacts_env
-
-channels:
-  - conda-forge
+name: page_rank_env
 
 dependencies:
   - python=3.6
   - pandas
   - beautifulsoup4
   - networkx
+  - boto3
