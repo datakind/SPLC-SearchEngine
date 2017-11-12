@@ -23,6 +23,8 @@ import lxml
 from json import loads, dumps
 import pprint
 import pickle
+import pandas as pd
+import numpy as np
 import os
 import xmltodict
 from collections import defaultdict
@@ -30,8 +32,16 @@ from collections import defaultdict
 class Alexa():
 
     ACCESS_ID = "AKIAIIKNPTNCGEICYBIQ"
+
+    # the features to request from the url_info endpoint
     URL_INFO_RESPONSE_PARAMETERS = ['RelatedLinks', 'Categories', 'Rank', 'RankByCountry', 'UsageStats', 'AdultContent',
                                     'Speed', 'Language', 'OwnedDomains', 'LinksInCount', 'SiteData']
+
+    # the features that will be added from the url_info endpoint
+    URL_INFO_FEATURE_NAMES = ['ExternalLinksToSite', 'OwnersOtherDomains', 'SiteDescription', 'OnlineSince',
+                              'SiteTitle', 'ThreeMonthAvgUSRank', 'PageViewsPerMillion', 'PageViewsPerUser',
+                              'ContributingSubdomains']
+    URLS_DATASET_PATH = '..' + os.sep + 'preDive' + os.sep + 'hatesitesDB.csv'
     NAMESPACES = {
         'http://alexa.amazonaws.com/doc/2005-10-05/': None,
         'http://awis.amazonaws.com/doc/2005-07-11': None
@@ -40,8 +50,37 @@ class Alexa():
     def __init__(self):
         self.secret = getpass.getpass(prompt='AWS Secret Key:')
         self.api = awis.AwisApi(Alexa.ACCESS_ID, self.secret)
+        self.urls_df = pd.read_csv(Alexa.URLS_DATASET_PATH)
+
+    def create_url_info_dataset(self):
+        expanded_df = self.urls_df.copy()
+        #expanded_df.index = expanded_df.Website.copy()
+        for col in Alexa.URL_INFO_FEATURE_NAMES:
+            expanded_df[col] = np.NAN
+
+        count = 0
+        for site in self.urls_df['Website']:
+            features = self.url_info(site)
+            if not features:
+                continue
+            for col_name in Alexa.URL_INFO_FEATURE_NAMES:
+                expanded_df.iloc[count, expanded_df.columns.get_loc(col_name)] = features.get(col_name)
+            count += 1
+
+        return expanded_df
 
     def url_info(self, url):
+        """
+        Uses the AWIS url_info endpoint to obtain a set of features on a URL. Note that the endpoint extacts and
+        returns a subset of all of the available features.
+
+        TODO: A subject matter expert should evaluate the list of available features that the endpoint returns and
+        update the dictionary returned by this function accordingly. For more information on all features returned, see:
+        http://docs.aws.amazon.com/AlexaWebInfoService/latest/index.html?IntroductionArticle.html
+
+        :param url: the url to request features on
+        :return: a dictionary of useful features pulled from the response
+        """
         xml_response = self.api.url_info(url, *Alexa.URL_INFO_RESPONSE_PARAMETERS, as_xml=False)
         res_dict = loads(dumps(xmltodict.parse(xml_response, process_namespaces=True, namespaces=Alexa.NAMESPACES)))
         flat_dict = {}
@@ -60,23 +99,26 @@ class Alexa():
             if 'TrafficData' in res_dict['UrlInfoResponse']['Response']['UrlInfoResult']['Alexa']:
                 traffic = res_dict['UrlInfoResponse']['Response']['UrlInfoResult']['Alexa']['TrafficData']
                 flat_dict['ThreeMonthAvgUSRank'] = traffic.get('Rank')
-                if 'UsageStatistics' in traffic and traffic['UsageStatistics']['UsageStatistic']:
-                    if 'PageViews' in traffic['UsageStatistics']['UsageStatistic'][0]:
+                if 'UsageStatistics' in traffic and traffic['UsageStatistics'] \
+                    and 'UsageStatistic' in traffic['UsageStatistics'] and\
+                    traffic['UsageStatistics']['UsageStatistic']:
+                    if traffic['UsageStatistics']['UsageStatistic'][0] and \
+                                    'PageViews' in traffic['UsageStatistics']['UsageStatistic'][0]:
                         pageviews = traffic['UsageStatistics']['UsageStatistic'][0]['PageViews']
                         if 'PerMillion' in pageviews:
                             flat_dict['PageViewsPerMillion'] = pageviews['PerMillion'].get('Value')
                         if 'PerUser' in pageviews:
                             flat_dict['PageViewsPerUser'] = pageviews['PerUser'].get('Value')
-                if 'ContributingSubdomains' in traffic and traffic['ContributingSubdomains']['ContributingSubdomain']:
+                if 'ContributingSubdomains' in traffic and traffic['ContributingSubdomains'] and \
+                        traffic['ContributingSubdomains']['ContributingSubdomain']:
                     subdomains = ''
                     for subdomain in traffic['ContributingSubdomains']['ContributingSubdomain']:
-                        subdomains += subdomain.get('DataUrl') + ', '
+                        if isinstance(subdomain, dict):
+                            subdomains += subdomain.get('DataUrl') + ', '
+                        else:
+                            subdomains = subdomain
                     flat_dict['ContributingSubdomains'] = subdomains.strip(', ')
         return flat_dict
 
 a = Alexa()
-res = a.url_info("http://www.breitbart.com/")
-
-f = open('/home/vito/projects/SPLC-SearchEngine/alexa_api/example_lxml_obj.txt', 'wb')
-pickle.dump(res, f)
-f.close()
+df = a.create_url_info_dataset()
