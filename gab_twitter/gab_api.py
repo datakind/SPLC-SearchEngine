@@ -58,7 +58,8 @@ def get_user_feed(user_name, session, raw_posts=False, write_path=None):
     else:
         data = utils.make_dataframe_from_posts(user_posts['data'])
         if write_path:
-            data.to_csv(write_path, index=False, encoding='utf-8')
+            write_file = write_path + '{}_posts.csv'.format(user_name)
+            data.to_csv(write_file, index=False, encoding='utf-8')
         return data
 
 def search(query, session, sort='relevance'):
