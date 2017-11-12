@@ -5,6 +5,7 @@ import awis
 import getpass
 import pandas as pd
 import os
+from lxml import etree
 import xmltodict
 
 class Alexa():
@@ -33,11 +34,17 @@ class Alexa():
                               'SiteTitle', 'ThreeMonthAvgUSRank', 'PageViewsPerMillion', 'PageViewsPerUser',
                               'ContributingSubdomains']
 
+    # a singleton list of the feature that will be added from the sites_linking_in endpoint
+    SITES_LINKING_IN_FEATURE_NAME = ['HighestRankSitesLinkingTo']
+
+    # all of the new features to be added
+    NEW_FEATURES = URL_INFO_FEATURE_NAMES + SITES_LINKING_IN_FEATURE_NAME
+
     # path to the source dataset of websites
     URLS_DATASET_PATH = '..' + os.sep + 'preDive' + os.sep + 'hatesitesDB.csv'
 
     # namespaces to filter out when parsing the xml response payload from the url info AWIS endpoint
-    URL_INFO_NAMESPACES = {
+    NAMESPACES = {
         'http://alexa.amazonaws.com/doc/2005-10-05/': None,
         'http://awis.amazonaws.com/doc/2005-07-11': None
     }
@@ -61,7 +68,7 @@ class Alexa():
         :return: a dictionary of useful features pulled from the response or None if an unsuccessful API response
         """
         xml_response = self.api.url_info(url, *Alexa.URL_INFO_RESPONSE_PARAMETERS, as_xml=False)
-        res_dict = xmltodict.parse(xml_response, process_namespaces=True, namespaces=Alexa.URL_INFO_NAMESPACES)
+        res_dict = xmltodict.parse(xml_response, process_namespaces=True, namespaces=Alexa.NAMESPACES)
         flat_dict = {}
         if not res_dict['UrlInfoResponse']['Response']['ResponseStatus']['StatusCode'] == 'Success':
             print("Error, unsuccessful response from api for the following url:\t" + url)
@@ -109,23 +116,51 @@ class Alexa():
                     flat_dict['ContributingSubdomains'] = subdomains.strip(', ')
         return flat_dict
 
-    def create_url_info_dataset(self):
+    def sites_linking_in(self, url):
+        """
+        Uses the AWIS sites_linking_in endpoint to obtain the top 20 rank sites linking to the given one.
+
+        For more information on the endpoint, see:
+        http://docs.aws.amazon.com/AlexaWebInfoService/latest/index.html?IntroductionArticle.html
+
+        :param url: the url to request the top 20  rank sites linking to
+        :return: a comma seperated string of the top 20 rank sites linking to the url
+        """
+        xml_response = self.api.sites_linking_in(url, count=20)
+        res_dict = xmltodict.parse(etree.tostring(xml_response), process_namespaces=True, namespaces=Alexa.NAMESPACES)
+        if res_dict['SitesLinkingInResponse']['Response']['ResponseStatus']['StatusCode'] == 'Success':
+            if res_dict['SitesLinkingInResponse']['Response']['SitesLinkingInResult'].get('Alexa') and \
+                res_dict['SitesLinkingInResponse']['Response']['SitesLinkingInResult']['Alexa'].get('SitesLinkingIn') and \
+                res_dict['SitesLinkingInResponse']['Response']['SitesLinkingInResult']['Alexa']['SitesLinkingIn'].get('Site'):
+                sites = res_dict['SitesLinkingInResponse']['Response']['SitesLinkingInResult']['Alexa']['SitesLinkingIn']['Site']
+                if isinstance(sites, dict):
+                    return {'HighestRankSitesLinkingTo': sites['Url']}
+                else:  # sites is a list
+                    site_str = ''
+                    for site in sites:
+                        site_str += site['Url'] + ', '
+                    return {'HighestRankSitesLinkingTo': site_str.strip(', ')}
+        return {}
+
+
+    def expanded_dataset(self):
         """
         Iterates over all of the website urls in URL_DATASET_PATH and generates supplementary features on the websites
-        using the URL_INFO AWIS api.
+        using the URL_INFO and SITES_LINKING_IN AWIS api.
 
         :return: a pandas DataFrame with the original features and supplementary features
         """
 
         # a list of the original dataset's columns with the new feature columns to be added
-        all_cols = list(self.urls_df.columns.get_values()) + Alexa.URL_INFO_FEATURE_NAMES
+        all_cols = list(self.urls_df.columns.get_values()) + Alexa.NEW_FEATURES
 
         # iterate over rows in original dataset, filling a dict to create a new dataset from
         features_dict = dict((col, []) for col in all_cols)
         for _, row in self.urls_df.iterrows():
             features = self.url_info(row['Website'])
+            features.update(self.sites_linking_in(row['Website']))
             for col_name in all_cols:
-                if col_name in Alexa.URL_INFO_FEATURE_NAMES:
+                if col_name in Alexa.NEW_FEATURES:
                     features_dict[col_name].append(features.get(col_name))
                 else:
                     features_dict[col_name].append(row[col_name])
@@ -135,5 +170,5 @@ class Alexa():
         return expanded_df
 
 a = Alexa()
-df = a.create_url_info_dataset()
+df = a.expanded_dataset()
 df.to_csv('hateSitesExpandedWithUrlInfo.csv', encoding='utf-8', index=False)
