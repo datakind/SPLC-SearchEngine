@@ -1,0 +1,66 @@
+Extracts all comments on board into csv file.
+
+Example usage: python extract_4chan_comments.py pol comments_4chan_pol.csv
+
+pol   --> board name on 4chan
+X.csv --> output file name
+
+4chan is organized into BOARDs. Each BOARD has a THREAD for each topic / dicussion. There is a main POST followed by a series of comment POSTs in each THREAD. The output CSV file has one line for each POST found in a given board.
+
+Columns in output CSV:
+
+'Thread',            --> Unique ID of thread
+'Sticky?',	     --> Bool: Marked as Sticky?
+'Closed?',	     --> Bool: Marked as closed?
+'Posts_in_thread',   --> Number of posts in this thread
+'Topic Post',	     --> Unique ID of thread
+'Postnumber',	     --> Unique ID of post
+'Timestamp',	     --> Timestamp
+'Datetime',	     --> Datetime object string
+'Name',		     --> User that created the post
+'Subject',	     --> Subject of post, i.e. title. Only filled for first post in thread, 'N/A' for replies.
+'Comment',	     --> The actual text of this post
+'File'               --> Original filename
+
+-----------
+Example usage: python extract_8chan_comments.py np comments_8chan_pol.csv
+
+np   --> board name on 8chan
+X.csv --> output file name
+
+Columns in output CSV:
+
+same as 4chan, exctep 'File' column is not provided
+
+------------
+Additional documentation:
+
+Python API to retrieve 4chan board comments:
+
+Documentation:
+http://basc-py4chan.readthedocs.io/en/latest/library/post.html#basic-usage
+
+Github source for library (this includes more fields than can be added to the CSV if needed):
+https://github.com/bibanon/BASC-py4chan
+
+Documentation of the full 4chan Read API (may include access to more information than implemented in the {ython library):
+https://github.com/4chan/4chan-API
+
+Installation:
+- 'pip install basc_py4chan'
+
+--------------------
+
+Here's the documentation for 8chan:
+https://github.com/bibanon/py8chan
+
+http://py8chan.readthedocs.io/en/latest/index.html
+
+Installation:
+- did not find the package with 'pip install py8chan'
+- Workaround:
+  1) Download code from github
+  2) cd py8chan
+  3) pip install .
+
+-------------
