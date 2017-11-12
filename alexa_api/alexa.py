@@ -68,7 +68,7 @@ class Alexa():
         :return: a dictionary of useful features pulled from the response or None if an unsuccessful API response
         """
         xml_response = self.api.url_info(url, *Alexa.URL_INFO_RESPONSE_PARAMETERS, as_xml=False)
-        res_dict = loads(dumps(xmltodict.parse(xml_response, process_namespaces=True, namespaces=Alexa.URL_INFO_NAMESPACES)))
+        res_dict = xmltodict.parse(xml_response, process_namespaces=True, namespaces=Alexa.URL_INFO_NAMESPACES)
         flat_dict = {}
         if not res_dict['UrlInfoResponse']['Response']['ResponseStatus']['StatusCode'] == 'Success':
             print("Error, unsuccessful response from api for the following url:\t" + url)
@@ -77,7 +77,16 @@ class Alexa():
             if 'ContentData' in res_dict['UrlInfoResponse']['Response']['UrlInfoResult']['Alexa']:
                 content = res_dict['UrlInfoResponse']['Response']['UrlInfoResult']['Alexa']['ContentData']
                 flat_dict['ExternalLinksToSite'] = content.get('LinksInCount')
-                flat_dict['OwnersOtherDomains'] = content.get('OwnedDomains')
+
+                if content.get('OwnedDomains') and content['OwnedDomains'].get('OwnedDomain'):
+                    owned_domains = content['OwnedDomains']['OwnedDomain']
+                    if isinstance(owned_domains, dict):
+                        flat_dict['OwnersOtherDomains'] = owned_domains['Domain']
+                    else:
+                        domains = ''
+                        for d in owned_domains:
+                            domains += d['Domain'] + ', '
+                        flat_dict['OwnersOtherDomains'] = domains.strip(', ')
                 if 'SiteData' in content:
                     flat_dict['SiteDescription'] = content['SiteData'].get('Description')
                     flat_dict['OnlineSince'] = content['SiteData'].get('OnlineSince')
